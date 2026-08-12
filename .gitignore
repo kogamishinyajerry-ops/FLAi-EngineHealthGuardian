@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# Virtual envs / uv
+.venv/
+venv/
+.python-version-local
+
+# Tooling caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Generated runtime data (demo outputs, local artifacts)
+data/
+*.parquet
+*.duckdb
+
+# Session / agent tooling metadata
+.zcode/
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
