@@ -50,6 +50,7 @@ convention = "google"
 "scripts/*" = ["D"]
 "src/ehm/dashboard/style.py" = ["E501"]  # CSS one-liners are legitimately long
 "src/ehm/dashboard/render.py" = ["E501"]  # HTML markup generation; breaking hurts readability
+"src/ehm/dashboard/charts.py" = ["E501"]  # SVG path math is long
 
 [tool.mypy]
 python_version = "3.12"

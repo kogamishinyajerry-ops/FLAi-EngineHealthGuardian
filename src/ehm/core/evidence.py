@@ -73,6 +73,22 @@ class EvidenceStatus(StrEnum):
     ABSTAIN = "abstain"  # insufficient confidence, defer to human
 
 
+class Signal(BaseModel):
+    """The time-series the Evidence is based on (e.g. the residual series).
+
+    Persisted so dashboards can draw waveforms/trends — the evidence's whole
+    basis is this series, so carrying it is honest (not UI-only state). Optional
+    and backward-compatible.
+    """
+
+    label: str = Field(description="What the series is, e.g. 'egt_residual'")
+    unit: str = Field(default="", description="Per-point unit, e.g. '°C' (residual)")
+    points: list[float] = Field(default_factory=list, description="Values oldest -> newest")
+    baseline: float | None = Field(default=None, description="Healthy reference (0 for a residual)")
+    threshold: float | None = Field(default=None, description="Alert threshold for shading")
+    flight_ids: list[str] = Field(default_factory=list, description="Optional x-axis labels")
+
+
 class Evidence(BaseModel):
     """A single auditable unit of EHM output."""
 
@@ -81,6 +97,9 @@ class Evidence(BaseModel):
     timestamp: datetime | None = Field(
         default=None,
         description="When the observed condition occurred (event time, NOT pipeline-run time)",
+    )
+    signal: Signal | None = Field(
+        default=None, description="Time-series the evidence is based on (for viz)"
     )
     observation: str = Field(description="What was observed, in plain terms")
     hypothesis: str | None = Field(default=None, description="Candidate cause / failure mode")

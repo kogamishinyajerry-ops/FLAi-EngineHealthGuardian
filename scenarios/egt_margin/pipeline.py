@@ -16,7 +16,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from ehm.agent.graph import run_agent
-from ehm.core.evidence import Evidence, EvidenceStatus, Provenance
+from ehm.core.evidence import Evidence, EvidenceStatus, Provenance, Signal
 from ehm.core.schemas import EngineSnapshot
 from ehm.data_brain.features.egt import residual
 from ehm.data_brain.features.peer import PeerGroup
@@ -34,6 +34,8 @@ class SliceResult:
     evidence: list[Evidence]
     messages: list[str]
     audit_path: str
+    snapshots_in: int = 0
+    snapshots_clean: int = 0
 
 
 def run(snapshots: list[EngineSnapshot], audit_path: str) -> SliceResult:
@@ -57,11 +59,13 @@ def run(snapshots: list[EngineSnapshot], audit_path: str) -> SliceResult:
 
     # 4. per-ESN residual series (time-ordered) -> trend rule
     series: dict[str, list[float]] = defaultdict(list)
+    flights_by_esn: dict[str, list[str]] = defaultdict(list)
     latest_by_esn: dict[str, EngineSnapshot] = {}
     for snap in sorted(clean, key=lambda s: s.timestamp):
         value = residual(snap)
         if value is not None:
             series[snap.esn].append(value)
+            flights_by_esn[snap.esn].append(snap.flight_id)
             latest_by_esn[snap.esn] = snap
 
     evidence: list[Evidence] = []
@@ -83,6 +87,13 @@ def run(snapshots: list[EngineSnapshot], audit_path: str) -> SliceResult:
         ev = Evidence(
             subject=f"ehm:ESN:{esn}",
             timestamp=latest.timestamp,
+            signal=Signal(
+                label="egt_residual",
+                unit="°C",
+                points=residuals,
+                baseline=0.0,
+                flight_ids=flights_by_esn.get(esn, []),
+            ),
             observation=(
                 f"EGT residual trailing slope {rule.score:.2f} °C/flight ({rule.detail}); "
                 f"peer z={peer_z if peer_z is not None else 'n/a'}; peer_size={peers.size(latest)}."
@@ -107,7 +118,13 @@ def run(snapshots: list[EngineSnapshot], audit_path: str) -> SliceResult:
         log.log(ev)
 
     messages = run_agent(evidence)
-    return SliceResult(evidence=evidence, messages=messages, audit_path=audit_path)
+    return SliceResult(
+        evidence=evidence,
+        messages=messages,
+        audit_path=audit_path,
+        snapshots_in=len(snapshots),
+        snapshots_clean=len(clean),
+    )
 
 
 def summarize(result: SliceResult) -> dict[str, int]:

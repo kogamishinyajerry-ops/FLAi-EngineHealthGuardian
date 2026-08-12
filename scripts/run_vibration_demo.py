@@ -10,12 +10,15 @@ from collections import defaultdict
 from scenarios.vibration.pipeline import run
 from scenarios.vibration.synthetic import generate
 
+from scripts._summary import write_summary
+
 AUDIT_PATH = "data/audit/vibration_demo.jsonl"
 
 
 def main() -> None:
     snapshots = generate(seed=42)
     result = run(snapshots, AUDIT_PATH)
+    write_summary(AUDIT_PATH, "振动", result)
 
     width = 70
     print("=" * width)

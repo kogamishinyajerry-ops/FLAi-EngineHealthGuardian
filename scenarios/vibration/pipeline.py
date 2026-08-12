@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from ehm.agent.graph import run_agent
-from ehm.core.evidence import Evidence, Provenance
+from ehm.core.evidence import Evidence, Provenance, Signal
 from ehm.core.schemas import EngineSnapshot
 from ehm.data_brain.features.peer import PeerGroup
 from ehm.data_brain.ingestion.synthetic import SyntheticAdapter
@@ -49,6 +49,8 @@ class SliceResult:
     evidence: list[Evidence]
     messages: list[str]
     audit_path: str
+    snapshots_in: int = 0
+    snapshots_clean: int = 0
 
 
 def run(snapshots: list[EngineSnapshot], audit_path: str) -> SliceResult:
@@ -69,11 +71,13 @@ def run(snapshots: list[EngineSnapshot], audit_path: str) -> SliceResult:
     peers.add_population(clean)
 
     series: dict[str, list[float]] = defaultdict(list)
+    flights_by_esn: dict[str, list[str]] = defaultdict(list)
     latest_by_esn: dict[str, EngineSnapshot] = {}
     for snap in sorted(clean, key=lambda s: s.timestamp):
         value = residual(snap)
         if value is not None:
             series[snap.esn].append(value)
+            flights_by_esn[snap.esn].append(snap.flight_id)
             latest_by_esn[snap.esn] = snap
 
     evidence: list[Evidence] = []
@@ -94,6 +98,13 @@ def run(snapshots: list[EngineSnapshot], audit_path: str) -> SliceResult:
         ev = Evidence(
             subject=f"ehm:ESN:{esn}",
             timestamp=latest.timestamp,
+            signal=Signal(
+                label="vibration_residual",
+                unit="ips",
+                points=residuals,
+                baseline=0.0,
+                flight_ids=flights_by_esn.get(esn, []),
+            ),
             observation=(
                 f"Vibration residual trailing slope {rule.score:.3f} ips/flight ({rule.detail}); "
                 f"peer z={peer_z if peer_z is not None else 'n/a'}; peer_size={peers.size(latest)}."
@@ -118,4 +129,10 @@ def run(snapshots: list[EngineSnapshot], audit_path: str) -> SliceResult:
         log.log(ev)
 
     messages = run_agent(evidence)
-    return SliceResult(evidence=evidence, messages=messages, audit_path=audit_path)
+    return SliceResult(
+        evidence=evidence,
+        messages=messages,
+        audit_path=audit_path,
+        snapshots_in=len(snapshots),
+        snapshots_clean=len(clean),
+    )

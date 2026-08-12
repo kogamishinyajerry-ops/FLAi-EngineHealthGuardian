@@ -17,45 +17,52 @@ def _scenarios(tmp_path) -> list[ScenarioData]:
             key="egt",
             gold=build_gold_labels(egt_ev, store),
             metrics=compute(build_gold_labels(egt_ev, store)),
+            summary={"snapshots_in": 54, "snapshots_clean": 54, "evidence_out": 3},
         ),
         ScenarioData(
             name="振动",
             key="vibration",
             gold=build_gold_labels(vib_ev, store),
             metrics=compute(build_gold_labels(vib_ev, store)),
+            summary={"snapshots_in": 54, "snapshots_clean": 54, "evidence_out": 3},
         ),
     ]
 
 
 def test_render_produces_valid_self_contained_html(tmp_path):
-    html_out = render_dashboard(_scenarios(tmp_path))
-    assert html_out.startswith("<!doctype html>")
-    assert "<html" in html_out and "</html>" in html_out
-    assert "<style>" in html_out and "<script>" in html_out
-    # fully offline: no external http(s) references
-    assert "http://" not in html_out
-    assert "https://" not in html_out
+    out = render_dashboard(_scenarios(tmp_path))
+    assert out.startswith("<!doctype html>")
+    assert "<html" in out and "</html>" in out
+    assert "<style>" in out and "<script>" in out
+    assert "http://" not in out
+    assert "https://" not in out
 
 
-def test_dashboard_contains_engines_status_and_metrics(tmp_path):
-    html_out = render_dashboard(_scenarios(tmp_path))
-    # scenario tabs + both scenario sections
-    assert "EGT 裕度" in html_out
-    assert "振动" in html_out
-    assert 'data-name="egt"' in html_out
-    assert 'data-name="vibration"' in html_out
-    # all three statuses rendered as badges
+def test_dashboard_has_views_charts_drawers_and_pipeline(tmp_path):
+    out = render_dashboard(_scenarios(tmp_path))
+    # scenario tabs + sections
+    assert "EGT 裕度" in out and "振动" in out
+    assert 'data-name="egt"' in out and 'data-name="vibration"' in out
+    # three views per scenario
+    assert 'data-view="fleet"' in out
+    assert 'data-view="flow"' in out
+    assert 'data-view="model"' in out
+    # status badges for all three states (drawers render every status)
     for status in ("nominal", "advisory", "abstain"):
-        assert f'class="status {status}"' in html_out
-    # engines from both scenarios appear
+        assert f"badge {status}" in out
+    # engines from both scenarios
     for esn in ("ESN_DEGRADE_02", "ESN_VIB_DEGRADE"):
-        assert esn in html_out
-    # provenance fields rendered
-    assert "rule" in html_out.lower() or "feature" in html_out.lower()
-    # confusion matrix present
-    assert "matrix" in html_out
-    # advisory-only footer
-    assert "advisory-only" in html_out
+        assert esn in out
+    # SVG charts present
+    assert "spark-line" in out  # sparkline polylines
+    assert "rpoly" in out  # confidence radar
+    # engine detail drawers (progressive disclosure)
+    assert 'class="drawer"' in out
+    # pipeline stages with counts
+    assert 'class="stage"' in out and "ACARS/QAR" in out
+    # anomaly-first + collapsed normals
+    assert "需要关注" in out and "正常 ·" in out
+    assert "advisory-only" in out
 
 
 def test_build_dashboard_cli_writes_file(tmp_path):
@@ -63,7 +70,6 @@ def test_build_dashboard_cli_writes_file(tmp_path):
 
     import scripts.build_dashboard as cli
 
-    # write demo audits + labels into tmp and point the CLI there
     egt_audit = tmp_path / "egt.jsonl"
     vib_audit = tmp_path / "vib.jsonl"
     egt_run(egt_generate(seed=1), str(egt_audit))
@@ -71,7 +77,6 @@ def test_build_dashboard_cli_writes_file(tmp_path):
     out = tmp_path / "dash.html"
     labels = tmp_path / "labels.jsonl"
 
-    # monkeypatch the module-level DEFAULT_SCENARIOS / paths for this test
     original = cli.DEFAULT_SCENARIOS
     cli.DEFAULT_SCENARIOS = (
         ("EGT 裕度", "egt", str(egt_audit)),

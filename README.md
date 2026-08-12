@@ -60,15 +60,15 @@ uv run python -m scripts.inspect_ingestion acars   # 解码 ACARS fixture
 
 样例数据见 `tests/fixtures/`(提交进仓,自文档化格式 + 可复现)。真实数据准入落地后,换字典/换样本即可切换,代码不动。
 
-### 可视化看板(静态 HTML)
+### 可视化看板(任务控制台)
 
-把整套架构的价值「被看见」:三态机队卡片、四维置信度条、可展开的证据链溯源、混淆矩阵、advisory precision —— 全部在一个自包含离线 HTML 里。
+深色「任务控制台」式看板:**渐进式披露**(默认只露异常,正常折叠)、**残差波形 SVG**(波动直观传达是否在恶化)、4 维**置信雷达**、点击引擎出**详情抽屉**、以及一个动画**航线流水**视图(一个航班如何被消化成可审计 Evidence)。三视图:机队总览 / 航线流水 / 模型表现。
 
 ```bash
 make dashboard   # 重生成 demo 数据 → 渲染 data/dashboard/index.html → 浏览器打开
 ```
 
-EGT/振动两个场景 tab 切换;EGT 跑过 `import-mro` 后会显示 shop 真相标签和真实 precision。看板是库的**只读消费者**,绝不成为数据源(见 `docs/adr/0008-dashboard-static-consumer.md`)。
+EGT 跑过 `import-mro` 后,异常卡上会带 `MRO:true_fault` shop 真相标签。看板是库的**只读消费者**,绝不成为数据源(见 `docs/adr/0008`、`docs/adr/0009-dashboard-v2-mission-console.md`)。
 
 ## 目录结构
 

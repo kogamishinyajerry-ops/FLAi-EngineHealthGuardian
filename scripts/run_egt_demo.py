@@ -8,12 +8,15 @@ from __future__ import annotations
 from scenarios.egt_margin.pipeline import run, summarize
 from scenarios.egt_margin.synthetic import generate
 
+from scripts._summary import write_summary
+
 AUDIT_PATH = "data/audit/egt_demo.jsonl"
 
 
 def main() -> None:
     snapshots = generate(seed=42)
     result = run(snapshots, AUDIT_PATH)
+    write_summary(AUDIT_PATH, "EGT 裕度", result)
 
     width = 70
     print("=" * width)

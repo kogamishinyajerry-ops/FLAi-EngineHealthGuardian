@@ -11,6 +11,7 @@ self-contained HTML file, then opens it in the browser.
 from __future__ import annotations
 
 import argparse
+import json
 import webbrowser
 from pathlib import Path
 
@@ -25,6 +26,14 @@ DEFAULT_SCENARIOS: tuple[tuple[str, str, str], ...] = (
 )
 DEFAULT_LABELS = "data/labels/adjudications.jsonl"
 DEFAULT_OUT = "data/dashboard/index.html"
+
+
+def _load_summary(audit_path: str) -> dict:
+    """Read the <audit>.summary.json sidecar written by the demo scripts."""
+    summary_path = Path(audit_path).with_suffix(".summary.json")
+    if not summary_path.exists():
+        return {}
+    return json.loads(summary_path.read_text(encoding="utf-8"))
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -42,7 +51,10 @@ def main(argv: list[str] | None = None) -> int:
             continue
         evidence = list(AuditLog(audit).iter_logged())
         gold = build_gold_labels(evidence, store)
-        scenarios.append(ScenarioData(name=name, key=key, gold=gold, metrics=compute(gold)))
+        summary = _load_summary(audit)
+        scenarios.append(
+            ScenarioData(name=name, key=key, gold=gold, metrics=compute(gold), summary=summary)
+        )
 
     if not scenarios:
         print("没有可渲染的场景数据。请先运行:make demo && make demo-vib")
