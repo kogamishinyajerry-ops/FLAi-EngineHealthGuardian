@@ -19,14 +19,16 @@ class RuleResult:
     detail: str
 
 
-def egt_residual_trend(
+def residual_trend(
     residuals: list[float], *, window: int = 5, slope_threshold: float = 2.0
 ) -> RuleResult:
     """Flag when the trailing-window slope of residuals exceeds a threshold.
 
-    ``residuals`` are ordered oldest→newest per ESN/phase. The slope is a simple
-    least-squares estimate over the trailing window — a deliberately conservative,
-    explainable signal (no black-box model).
+    Generic over the residual source (EGT margin, vibration, oil, ...). The rule
+    was originally named ``egt_residual_trend``; renaming reflects that the logic
+    is parameter-agnostic — see ADR-0007. ``residuals`` are ordered oldest→newest
+    per ESN/phase; the slope is a simple least-squares estimate over the trailing
+    window (deliberately conservative, explainable — no black-box model).
     """
     if len(residuals) < window:
         return RuleResult(False, 0.0, f"insufficient samples ({len(residuals)}<{window})")
@@ -40,5 +42,9 @@ def egt_residual_trend(
     slope = num / den if den else 0.0
     triggered = slope >= slope_threshold
     return RuleResult(
-        triggered, slope, f"trailing-slope={slope:.3f} °C/flight over window={window}"
+        # Unit-agnostic: the caller knows the residual's unit (°C/flight, ips/flight, ...)
+        # and renders it in the observation text. Hard-coding a unit here was an EGT leak.
+        triggered,
+        slope,
+        f"trailing-slope={slope:.3f} over window={window}",
     )

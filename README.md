@@ -23,6 +23,7 @@ Python 3.12 · uv · Pydantic v2 · Polars · DuckDB+Parquet · rdflib(单层本
 ```bash
 make install   # uv sync,创建 venv 并 editable 安装 ehm
 make demo      # 跑 EGT-margin 垂直切片(合成数据,离线)
+make demo-vib  # 跑第二个场景:振动异常趋势(验证「加场景不动库」)
 make gold      # 跑 demo + 种子判定 + 反馈报告(gold-label 闭环演示)
 make test      # pytest
 make lint      # ruff
@@ -69,6 +70,7 @@ src/ehm/
   agent/         LangGraph 2-node 图(assess→respond),LLM 插入点 documented
   feedback/      gold-label 闭环:Adjudication 事件 / LabelStore / join / 反馈指标
 scenarios/egt_margin/   首个垂直切片:EGT 裕度异常趋势(合成数据)
+scenarios/vibration/    第二个垂直切片:振动异常趋势(压测「加场景不动库」)
 scripts/run_egt_demo.py `make demo` 入口
 scripts/adjudicate.py   gold-label 判定 CLI(list / apply / report / seed-demo)
 scripts/inspect_ingestion.py  真实格式 fixture 解码演示(qar / acars)

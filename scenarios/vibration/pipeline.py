@@ -1,30 +1,45 @@
-"""EGT-margin end-to-end vertical slice.
+"""Vibration vertical-slice pipeline.
 
-Proves the whole architecture with synthetic data on one scenario::
-
-    ingest -> DQ -> EGT residual feature -> peer normalization -> trend rule
-            -> uncertainty -> advisory policy gate -> Evidence -> agent -> audit log
-
-Run via ``make demo`` (scripts/run_egt_demo.py). The slice is deliberately a
-linear, readable function — it exists to validate that the four brains compose
-behind the Evidence spine, not to be production logic.
+Structurally mirrors the EGT pipeline but reuses only **generic** library
+primitives — no library code is EGT-specific here. This is the proof point for
+ADR-0007: a second scenario composed entirely from the generic platform + its own
+feature engineering.
 """
 
 from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
+from enum import StrEnum
 
 from ehm.agent.graph import run_agent
-from ehm.core.evidence import Evidence, EvidenceStatus, Provenance
+from ehm.core.evidence import Evidence, Provenance
 from ehm.core.schemas import EngineSnapshot
-from ehm.data_brain.features.egt import residual
 from ehm.data_brain.features.peer import PeerGroup
 from ehm.data_brain.ingestion.synthetic import SyntheticAdapter
 from ehm.data_brain.phm.anomaly import residual_trend
 from ehm.data_brain.quality import checks as dq
-from ehm.knowledge_brain.rules import RULES_VERSION, EgtFailureMode
+from ehm.knowledge_brain.ontology import FAILURE_MODE
 from ehm.safety_brain import audit, policy, uncertainty
+from scenarios.vibration.features import residual
+
+#: Vibration trends are small-magnitude (ips); use a much smaller slope threshold
+#: than the EGT slice's 2.0 °C/flight default.
+_VIB_SLOPE_THRESHOLD = 0.05
+
+
+class VibrationFailureMode(StrEnum):
+    """Failure modes exercised by the vibration slice."""
+
+    BEARING_DEGRADATION = "BearingDegradation"
+    ROTOR_IMBALANCE = "RotorImbalance"
+
+    def uri(self) -> str:
+        """Ontology URI (reuses the generic ``FAILURE_MODE`` namespace)."""
+        return f"{FAILURE_MODE}{self.value}"
+
+
+RULES_VERSION = "rules:vibration:v0"
 
 
 @dataclass
@@ -37,25 +52,22 @@ class SliceResult:
 
 
 def run(snapshots: list[EngineSnapshot], audit_path: str) -> SliceResult:
-    """Execute the EGT-margin slice over a batch of snapshots."""
+    """Execute the vibration slice over a batch of snapshots."""
     log = audit.AuditLog(audit_path)
     log.clear()
 
-    # 1. ingest (synthetic adapter) + 2. DQ gate
-    adapter = SyntheticAdapter(snapshots)
-    clean: list[EngineSnapshot] = [snap for snap in adapter.iter_snapshots() if dq.assess(snap).ok]
+    clean: list[EngineSnapshot] = [
+        snap for snap in SyntheticAdapter(snapshots).iter_snapshots() if dq.assess(snap).ok
+    ]
 
-    # Per-ESN average data completeness (from RAW, incl. any DQ-rejected) -> Data Confidence
     completeness_by_esn: dict[str, list[float]] = defaultdict(list)
     for snap in snapshots:
         completeness_by_esn[snap.esn].append(dq.assess(snap).completeness)
     avg_completeness = {e: sum(v) / len(v) for e, v in completeness_by_esn.items()}
 
-    # 3. peer baseline over the clean population
     peers = PeerGroup(residual_fn=residual)
     peers.add_population(clean)
 
-    # 4. per-ESN residual series (time-ordered) -> trend rule
     series: dict[str, list[float]] = defaultdict(list)
     latest_by_esn: dict[str, EngineSnapshot] = {}
     for snap in sorted(clean, key=lambda s: s.timestamp):
@@ -67,37 +79,36 @@ def run(snapshots: list[EngineSnapshot], audit_path: str) -> SliceResult:
     evidence: list[Evidence] = []
     for esn, residuals in series.items():
         latest = latest_by_esn[esn]
-        rule = residual_trend(residuals)
+        rule = residual_trend(residuals, slope_threshold=_VIB_SLOPE_THRESHOLD)
         peer_z = peers.zscore(latest)
-        model_score = min(1.0, rule.score / 3.0) if rule.triggered else None
+        # The trend rule is a binary trigger, not a calibrated probability -> model
+        # confidence is left unassessed (None). See ADR-0007.
         confidence = uncertainty.from_signals(
             data_completeness=avg_completeness.get(esn, 0.0),
             peer_size=peers.size(latest),
             rule_applies=True,
-            model_score=model_score,
+            model_score=None,
         )
-        hypothesis = (
-            EgtFailureMode.COMPRESSOR_EFFICIENCY_DEGRADATION.value if rule.triggered else None
-        )
+        hypothesis = VibrationFailureMode.BEARING_DEGRADATION.value if rule.triggered else None
 
         ev = Evidence(
             subject=f"ehm:ESN:{esn}",
             timestamp=latest.timestamp,
             observation=(
-                f"EGT residual trailing slope {rule.score:.2f} °C/flight ({rule.detail}); "
+                f"Vibration residual trailing slope {rule.score:.3f} ips/flight ({rule.detail}); "
                 f"peer z={peer_z if peer_z is not None else 'n/a'}; peer_size={peers.size(latest)}."
             ),
             hypothesis=hypothesis,
             confidence=confidence,
             provenance=Provenance(
                 raw_refs=[f"synthetic:{esn}"],
-                feature_refs=["egt_residual", "peer_zscore", "trend_slope"],
+                feature_refs=["vibration_residual", "peer_zscore", "trend_slope"],
                 rule_version=RULES_VERSION,
-                ontology_entities=[EgtFailureMode.COMPRESSOR_EFFICIENCY_DEGRADATION.uri()],
-                manual_citations=["FIM 72-00-00"],
+                ontology_entities=[VibrationFailureMode.BEARING_DEGRADATION.uri()],
+                manual_citations=["FIM 79-00-00 (engine vibration analysis)"],
             ),
             recommendation=(
-                "Monitor EGT margin; plan borescope if the upward trend persists."
+                "Inspect engine vibration; borescope bearings / rotor balance if trend persists."
                 if rule.triggered
                 else None
             ),
@@ -108,14 +119,3 @@ def run(snapshots: list[EngineSnapshot], audit_path: str) -> SliceResult:
 
     messages = run_agent(evidence)
     return SliceResult(evidence=evidence, messages=messages, audit_path=audit_path)
-
-
-def summarize(result: SliceResult) -> dict[str, int]:
-    """Count Evidence by status — handy for demo output and tests."""
-    counts: dict[str, int] = defaultdict(int)
-    for ev in result.evidence:
-        counts[ev.status.value] += 1
-    return dict(counts)
-
-
-__all__ = ["SliceResult", "run", "summarize", "EvidenceStatus"]

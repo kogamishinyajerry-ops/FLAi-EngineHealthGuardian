@@ -1,4 +1,4 @@
-.PHONY: install sync lint format type test test-cov demo gold gold-mro clean
+.PHONY: install sync lint format type test test-cov demo demo-vib gold gold-mro clean
 
 # `uv sync` is the single entrypoint for env + deps (editable install of `ehm`)
 install sync:
@@ -23,6 +23,10 @@ test-cov:
 # End-to-end vertical slice (synthetic data, offline)
 demo:
 	uv run python -m scripts.run_egt_demo
+
+# Second scenario — vibration (proves "add a scenario without touching the library")
+demo-vib:
+	uv run python -m scripts.run_vibration_demo
 
 # Gold-label loop demo: run pipeline -> seed verdicts -> feedback report
 gold:

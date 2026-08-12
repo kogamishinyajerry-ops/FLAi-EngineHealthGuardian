@@ -41,8 +41,8 @@
 |---|---|---|
 | 数据接入(ACARS/QAR/MRO) | `data_brain.ingestion`(`IngestionAdapter` 协议) | 合成 + **QAR-CSV / ACARS-JSON 真实格式 adapter + ParameterMap**;真实 OEM 字典/ICD、流式 ACARS deferred(见 ADR-0005) |
 | 数据质量 | `data_brain.quality.checks` | 基础 completeness/range;OEM 限值 deferred |
-| 特征/工况归一化 | `data_brain.features.egt` / `peer` | EGT 残差 + peer z;真热力学模型 deferred |
-| 异常检测/PHM | `data_brain.phm.anomaly` | 趋势规则;ensemble/ML/数字孪生 deferred |
+| 特征/工况归一化 | `data_brain.features.egt` / `peer` | EGT 残差(EGT 场景自带);`PeerGroup` **通用**(`residual_fn` 参数) |
+| 异常检测/PHM | `data_brain.phm.anomaly` | `residual_trend` **通用**趋势规则(参数无关);ensemble/ML/数字孪生 deferred |
 | 发动机本体 | `knowledge_brain.ontology`(rdflib 单层) | 命名空间 + 核心类/关系 v0 |
 | 规则/因果 | `knowledge_brain.rules` | 失效模式词汇 + version;FMEA/fault tree deferred |
 | 不确定性 | `safety_brain.uncertainty` | 四类置信度 + peer 惩罚 |
@@ -94,8 +94,9 @@ raw → cleaned → feature → model/rule version → ontology entities
 
 ## 验证策略(v0)
 
-- `make demo`:合成数据端到端跑通,产出含 Evidence(含完整 provenance + 至少一条 ABSTAIN)的审计 JSONL。
-- `make test`:单元(Evidence/Confidence/策略闸门/Canonical Model)+ 切片(EGT 三类输出齐全)。
+- `make demo` / `make demo-vib`:两个场景(EGT 裕度、振动)合成数据端到端跑通,各产出含 Evidence(完整 provenance + 至少一条 ABSTAIN)的审计 JSONL。
+- `make test`:单元(Evidence/Confidence/策略闸门/Canonical Model)+ 切片(两场景各三类输出齐全)+ ingestion/feedback/findings。
+- 场景即消费者:`make demo-vib` 证明加场景不动库(见 ADR-0007)。
 - 合入门槛:`make lint`、`make type`、`make test` 全绿。
 
 未来的离线→在线验证流程(历史回放 → 时间/ESN 隔离测试 → 工程师盲评 → shadow mode → stepped-wedge)在进入真实数据阶段后再落地,数据结构现在就按那个方向建。
