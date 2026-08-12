@@ -15,8 +15,8 @@ from dataclasses import dataclass, field
 
 from ehm.core.schemas import EngineSnapshot
 
-# Parameters considered "key" for an EGT-oriented judgment.
-_KEY_PARAMS: tuple[str, ...] = ("oat_c", "n1_pct", "n2_pct", "egt_c", "fuel_flow_kg_h")
+# Default "key" parameters (EGT-oriented); callers pass their own for other domains.
+_DEFAULT_KEY_PARAMS: tuple[str, ...] = ("oat_c", "n1_pct", "n2_pct", "egt_c", "fuel_flow_kg_h")
 
 
 @dataclass(frozen=True)
@@ -33,11 +33,20 @@ class DqReport:
         return not self.issues
 
 
-def assess(snapshot: EngineSnapshot, *, min_completeness: float = 0.6) -> DqReport:
-    """Assess a snapshot; returns a report (never raises on bad data — record it)."""
+def assess(
+    snapshot: EngineSnapshot,
+    *,
+    min_completeness: float = 0.6,
+    key_params: tuple[str, ...] = _DEFAULT_KEY_PARAMS,
+) -> DqReport:
+    """Assess a snapshot; returns a report (never raises on bad data — record it).
+
+    ``key_params`` is configurable per domain (ADR-0012): the EGT-oriented default
+    no longer silently mis-measures completeness for vibration/oil scenarios.
+    """
     issues: list[str] = []
-    present = sum(1 for p in _KEY_PARAMS if getattr(snapshot, p) is not None)
-    completeness = present / len(_KEY_PARAMS)
+    present = sum(1 for p in key_params if getattr(snapshot, p) is not None)
+    completeness = present / len(key_params) if key_params else 1.0
 
     if completeness < min_completeness:
         issues.append(f"completeness {completeness:.2f} < {min_completeness:.2f}")

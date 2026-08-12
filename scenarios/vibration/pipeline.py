@@ -27,6 +27,9 @@ from scenarios.vibration.features import residual
 #: than the EGT slice's 2.0 °C/flight default.
 _VIB_SLOPE_THRESHOLD = 0.05
 
+#: Domain key params for DQ completeness (vibration, not the EGT-oriented default).
+_KEY_PARAMS = ("oat_c", "n1_pct", "n2_pct", "vibration_ips", "fuel_flow_kg_h")
+
 
 class VibrationFailureMode(StrEnum):
     """Failure modes exercised by the vibration slice."""
@@ -59,12 +62,14 @@ def run(snapshots: list[EngineSnapshot], audit_path: str) -> SliceResult:
     log.clear()
 
     clean: list[EngineSnapshot] = [
-        snap for snap in SyntheticAdapter(snapshots).iter_snapshots() if dq.assess(snap).ok
+        snap
+        for snap in SyntheticAdapter(snapshots).iter_snapshots()
+        if dq.assess(snap, key_params=_KEY_PARAMS).ok
     ]
 
     completeness_by_esn: dict[str, list[float]] = defaultdict(list)
     for snap in snapshots:
-        completeness_by_esn[snap.esn].append(dq.assess(snap).completeness)
+        completeness_by_esn[snap.esn].append(dq.assess(snap, key_params=_KEY_PARAMS).completeness)
     avg_completeness = {e: sum(v) / len(v) for e, v in completeness_by_esn.items()}
 
     peers = PeerGroup(residual_fn=residual)

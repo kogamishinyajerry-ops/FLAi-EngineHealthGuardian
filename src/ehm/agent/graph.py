@@ -17,7 +17,7 @@ from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
-from ehm.agent.tools import format_advisory, lookup_fim_task
+from ehm.agent.tools import format_advisory
 from ehm.core.evidence import Evidence
 
 
@@ -37,7 +37,9 @@ def respond(state: AgentState) -> dict[str, list[str]]:
     """Format one status-aware message per Evidence using allow-listed tools."""
     messages: list[str] = []
     for ev in state["evidence"]:
-        fim = lookup_fim_task(ev.hypothesis) if ev.hypothesis else "FIM TBD"
+        # FIM grounding comes from the evidence's own provenance (set by the scenario
+        # from authorized docs), not a hardcoded agent table (ADR-0012).
+        fim = "; ".join(ev.provenance.manual_citations) or "FIM TBD"
         messages.append(
             format_advisory(
                 subject=ev.subject,

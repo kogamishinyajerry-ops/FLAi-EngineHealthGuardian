@@ -26,5 +26,6 @@ make dashboard                   # 三场景 tab 一起渲染
 ```
 
 ## 剩余摩擦(同前,非阻塞)
-- agent FIM 表无 `OilLeak` → 返回 `FIM TBD`(优雅降级)。
-- DQ `_KEY_PARAMS` 仍偏 EGT(不含 oil_level);滑油场景把标准参数填齐以过 completeness。
+- 场景编排与 EGT/振动 pipeline 结构相似(可未来抽共享运行器)。
+
+> 原先两处摩擦(agent FIM 表无 `OilLeak` → `FIM TBD`;DQ `_KEY_PARAMS` 偏 EGT)已在 ADR-0012 消除:FIM 改读 `provenance.manual_citations`,DQ `key_params` 按域可配置。滑油 pipeline 现传自己的 key_params。

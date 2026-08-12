@@ -25,6 +25,9 @@ from scenarios.oil.features import consumption_series, mean_rate
 #: Consumption-rate slope (L/flight²) above which a leak is suspected.
 _OIL_SLOPE_THRESHOLD = 0.03
 
+#: Domain key params for DQ completeness (oil, not the EGT-oriented default).
+_KEY_PARAMS = ("oil_temp_c", "oil_pressure_kpa", "oil_level_l", "oat_c", "n1_pct")
+
 
 class OilFailureMode(StrEnum):
     """Failure modes exercised by the oil slice."""
@@ -55,11 +58,15 @@ def run(snapshots: list[EngineSnapshot], audit_path: str) -> SliceResult:
     log = audit.AuditLog(audit_path)
     log.clear()
 
-    clean = [s for s in SyntheticAdapter(snapshots).iter_snapshots() if dq.assess(s).ok]
+    clean = [
+        s
+        for s in SyntheticAdapter(snapshots).iter_snapshots()
+        if dq.assess(s, key_params=_KEY_PARAMS).ok
+    ]
 
     completeness_by_esn: dict[str, list[float]] = defaultdict(list)
     for snap in snapshots:
-        completeness_by_esn[snap.esn].append(dq.assess(snap).completeness)
+        completeness_by_esn[snap.esn].append(dq.assess(snap, key_params=_KEY_PARAMS).completeness)
     avg_completeness = {e: sum(v) / len(v) for e, v in completeness_by_esn.items()}
 
     by_esn: dict[str, list[EngineSnapshot]] = defaultdict(list)

@@ -39,6 +39,6 @@ make demo-vib   # = uv run python -m scripts.run_vibration_demo
 
 ## 已记录的剩余摩擦(非阻塞)
 
-- **agent FIM 表是 EGT 专属**:振动的 `BearingDegradation` 走 `lookup_fim_task` 返回 `FIM TBD`(优雅降级,不报错)。未来应让 failure-mode→FIM 映射可扩展/可配置。
-- **DQ `_KEY_PARAMS` 偏 EGT**:completeness 按 (oat,n1,n2,egt,fuel) 计,不含 vibration;振动场景把这几个参数都填了以通过。未来可让 key-params 按场景配置。
 - **场景编排有重复**:本 pipeline 与 EGT pipeline 结构高度相似(~60 行)。若第 3、4 个场景继续同构,可抽出共享的「残差-趋势场景运行器」(目前刻意不抽,避免过早泛化)。
+
+> 原先两处摩擦(agent FIM 表 EGT 专属 → `FIM TBD`;DQ `_KEY_PARAMS` 偏 EGT)已在 ADR-0012 消除:FIM 改读 `provenance.manual_citations`,DQ `key_params` 按域可配置。振动 pipeline 现传自己的 key_params。

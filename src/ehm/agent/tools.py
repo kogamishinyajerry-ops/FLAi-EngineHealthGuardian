@@ -1,28 +1,20 @@
 """Tool allow-list for the agent.
 
-Per the cardinal rule "the LLM never computes engine state", every tool the
-agent may call is enumerated here (**allow-list, not open function-calling**).
-v0 tools are deterministic, side-effect-free lookups; LLM-grounded tools (RAG
-over authorized AMM/FIM/TSM with version control) plug in at the marked points.
+Per the cardinal rule "the LLM never computes engine state", every tool the agent
+may call is enumerated here (**allow-list, not open function-calling**).
+
+The maintenance-reference grounding (FIM task) used to live in a hardcoded
+``_FIM_TABLE`` here, which was EGT-specific and wrong for other scenarios
+(vibration/oil returned "FIM TBD"). It is now read from
+``Evidence.provenance.manual_citations`` — each scenario already sets it from the
+authorized docs it knows. So the agent no longer re-derives FIM; it just renders
+what the evidence already carries (ADR-0012).
 """
 
 from __future__ import annotations
 
 # v0 allow-list: only deterministic, side-effect-free tools.
-ALLOWED_TOOLS: tuple[str, ...] = ("lookup_fim_task", "format_advisory")
-
-# Mock FIM mapping. Real impl: RAG over authorized AMM/FIM/TSM with version control.
-_FIM_TABLE: dict[str, str] = {
-    "CompressorEfficiencyDegradation": "FIM 72-00-00 (compressor efficiency / gas-path)",
-    "BleedAirLeak": "FIM 36-11-00 (pneumatic / bleed)",
-    "FuelNozzleDegradation": "FIM 73-21-00 (fuel distribution)",
-    "SensorDegradation": "FIM 77-20-00 (engine indicating)",
-}
-
-
-def lookup_fim_task(failure_mode: str) -> str:
-    """Ground a failure mode in an authorized maintenance reference (mock in v0)."""
-    return _FIM_TABLE.get(failure_mode, "FIM TBD — no mapping in v0")
+ALLOWED_TOOLS: tuple[str, ...] = ("format_advisory",)
 
 
 def format_advisory(
@@ -46,3 +38,6 @@ def format_advisory(
             f"Reference: {fim}."
         )
     return f"[NOMINAL] {subject}: {observation}. No action."
+
+
+__all__ = ["ALLOWED_TOOLS", "format_advisory"]
