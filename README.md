@@ -44,6 +44,17 @@ uv run python -m scripts.adjudicate seed-demo                      # 给 demo �
 
 `outcome` ∈ `true_fault | conditional_anomaly | operational | sensor_issue | nff | inconclusive`。
 
+### 真实格式 ingestion(QAR-CSV / ACARS-JSON)
+
+平台不再 synthetic-only:`QarCsvAdapter` / `AcarsJsonAdapter` 走现有 `IngestionAdapter` 协议,经 `ParameterMap`(源列名→canonical 字段 + 单位转换)确定性译码,相位由有状态 `PhaseTracker` 从高度/空速序列推出。加新航司/新源 = 新建一个 map,不改代码(见 `docs/adr/0005-real-format-ingestion.md`)。
+
+```bash
+uv run python -m scripts.inspect_ingestion qar     # 解码 QAR fixture
+uv run python -m scripts.inspect_ingestion acars   # 解码 ACARS fixture
+```
+
+样例数据见 `tests/fixtures/`(提交进仓,自文档化格式 + 可复现)。真实数据准入落地后,换字典/换样本即可切换,代码不动。
+
 ## 目录结构
 
 ```
@@ -57,7 +68,9 @@ src/ehm/
 scenarios/egt_margin/   首个垂直切片:EGT 裕度异常趋势(合成数据)
 scripts/run_egt_demo.py `make demo` 入口
 scripts/adjudicate.py   gold-label 判定 CLI(list / apply / report / seed-demo)
+scripts/inspect_ingestion.py  真实格式 fixture 解码演示(qar / acars)
 tests/                    单元 + 切片测试
+tests/fixtures/           真实格式样例(qar_sample.csv / acars_sample.jsonl)
 docs/                     策略报告、评估、架构、ADR
 ```
 

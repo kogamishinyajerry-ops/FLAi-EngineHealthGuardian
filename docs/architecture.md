@@ -39,7 +39,7 @@
 
 | 报告概念 | 本仓落点 | 状态 |
 |---|---|---|
-| 数据接入(ACARS/QAR/MRO) | `data_brain.ingestion`(`IngestionAdapter` 协议) | 协议 + 合成适配器;真实 adapter deferred |
+| 数据接入(ACARS/QAR/MRO) | `data_brain.ingestion`(`IngestionAdapter` 协议) | 合成 + **QAR-CSV / ACARS-JSON 真实格式 adapter + ParameterMap**;真实 OEM 字典/ICD、流式 ACARS deferred(见 ADR-0005) |
 | 数据质量 | `data_brain.quality.checks` | 基础 completeness/range;OEM 限值 deferred |
 | 特征/工况归一化 | `data_brain.features.egt` / `peer` | EGT 残差 + peer z;真热力学模型 deferred |
 | 异常检测/PHM | `data_brain.phm.anomaly` | 趋势规则;ensemble/ML/数字孪生 deferred |
@@ -79,7 +79,8 @@ raw → cleaned → feature → model/rule version → ontology entities
 
 ## 显式 stub / deferred 清单(v0 不做)
 
-- 真实 ACARS/QAR/MRO adapter(只有协议 + 合成适配器)
+- 真实 OEM 参数字典/ICD(QAR-CSV/ACARS-JSON adapter + `ParameterMap` 已落地;真实字典/报文版本协商 deferred,见 ADR-0005)
+- 流式(实时)ACARS 接入(MVP 走文件/JSONL);相位识别已有占位 `PhaseTracker`,真实阈值待 OEM 校准
 - 双层图数据库(单层 rdflib)
 - Kafka / K8s(文件/JSONL ingestion)
 - LLM 实调(agent `respond` 默认确定性格式化,离线可跑;LLM 插入点 documented)

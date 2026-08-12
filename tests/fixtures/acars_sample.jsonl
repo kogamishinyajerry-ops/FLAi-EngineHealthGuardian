@@ -1,0 +1,3 @@
+{"ts":"2026-08-01T10:30:00Z","esn":"ESN_ACARS_01","flight":"CZ1234","phase":"CRUISE","OAT":15,"N1":88,"N2":94,"EGT":640,"FF":3000}
+{"ts":"2026-08-01T10:45:00Z","esn":"ESN_ACARS_01","flight":"CZ1234","phase":"CRUISE","OAT":14,"N1":89,"N2":94,"EGT":650,"FF":3050}
+{"ts":"2026-08-01T09:00:00Z","esn":"ESN_ACARS_02","flight":"CZ5678","phase":"CLIMB","OAT":2,"N1":95,"N2":98,"EGT":980,"FF":4200}
