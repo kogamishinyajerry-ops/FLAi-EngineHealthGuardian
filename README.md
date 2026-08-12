@@ -23,12 +23,26 @@ Python 3.12 · uv · Pydantic v2 · Polars · DuckDB+Parquet · rdflib(单层本
 ```bash
 make install   # uv sync,创建 venv 并 editable 安装 ehm
 make demo      # 跑 EGT-margin 垂直切片(合成数据,离线)
+make gold      # 跑 demo + 种子判定 + 反馈报告(gold-label 闭环演示)
 make test      # pytest
 make lint      # ruff
 make type      # mypy (src/ehm)
 ```
 
 `make demo` 会用合成数据端到端跑通:`ingest → DQ → EGT 残差特征 → peer 归一化 → 趋势规则 → 不确定性 → advisory 策略闸门 → Evidence → agent → 审计日志`,并打印三类输出(NOMINAL / ADVISORY / ABSTAIN)。
+
+### Gold-label 闭环(工程师判定回路)
+
+报告的头号资产:每个告警最终得到工程师结论,并反哺模型。Evidence 不可变,判定以 append-only `Adjudication` 事件记录(见 `docs/adr/0004-gold-label-loop.md`)。
+
+```bash
+uv run python -m scripts.adjudicate list                          # 列出待判定 Evidence
+uv run python -m scripts.adjudicate apply <id> <outcome> [--finding ...]  # 记录判定
+uv run python -m scripts.adjudicate report                         # 反馈统计(coverage / precision / confusion)
+uv run python -m scripts.adjudicate seed-demo                      # 给 demo 写示例判定(非真实标签)
+```
+
+`outcome` ∈ `true_fault | conditional_anomaly | operational | sensor_issue | nff | inconclusive`。
 
 ## 目录结构
 
@@ -39,8 +53,10 @@ src/ehm/
   knowledge_brain/  本体(rdflib)+ 规则
   safety_brain/  uncertainty / advisory 策略闸门 / append-only 审计
   agent/         LangGraph 2-node 图(assess→respond),LLM 插入点 documented
+  feedback/      gold-label 闭环:Adjudication 事件 / LabelStore / join / 反馈指标
 scenarios/egt_margin/   首个垂直切片:EGT 裕度异常趋势(合成数据)
 scripts/run_egt_demo.py `make demo` 入口
+scripts/adjudicate.py   gold-label 判定 CLI(list / apply / report / seed-demo)
 tests/                    单元 + 切片测试
 docs/                     策略报告、评估、架构、ADR
 ```

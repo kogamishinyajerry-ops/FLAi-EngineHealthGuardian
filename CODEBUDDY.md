@@ -42,6 +42,7 @@ agent         LangGraph 编排。依赖 core + 各脑的只读结果(Evidence)�
 - **配置与版本化从 day1 强制**:规则、模型、本体、资料引用都要带 version;`EngineSnapshot.config_tag` 支撑「时间化构型」(某航段当时的构型/SB 状态必须可重建)。
 - **训练/测试按时间、ESN、航司隔离**(禁止同发动机相邻航段随机 split)。本仓尚未进入建模阶段,但任何未来数据集构造必须遵守。
 - 误报治理以 **false-alert budget** 为硬 KPI;稀有故障报 **precision-recall / event-level**,不报 ROC-AUC;RUL 同时报 **interval coverage**,不只 RMSE。
+- **已记录的 Evidence 不可变**。工程师判定(gold-label)只能以 append-only `Adjudication` 事件记录,经 `GoldLabel` join 暴露,绝不回写审计日志里的 Evidence(见 ADR-0004)。这是审计完整性的硬约束。
 
 ## 4. 测试与可复现
 

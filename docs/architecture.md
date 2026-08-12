@@ -51,6 +51,7 @@
 | Agent | `agent.graph`(LangGraph) | 2-node 图;LLM 插入点 documented |
 | Canonical Data Model | `core.schemas` | `EngineSnapshot` v0 |
 | Evidence 脊柱 | `core.evidence` | v0,含 NOMINAL/ADVISORY/ABSTAIN 状态 |
+| Gold-label 闭环 | `feedback`(`labels`/`store`/`gold`/`metrics`) | 事件溯源判定 + join + 反馈统计;见 ADR-0004 |
 
 ## 关键数据结构
 
@@ -74,6 +75,7 @@ raw → cleaned → feature → model/rule version → ontology entities
 2. **垂直切片优先于水平分层**:v0 用 EGT-margin 一个场景端到端打通(合成数据),而不是先把四脑全铺开。架构被真实切片验证,而非被架构图验证。
 3. **具体选型先锁**:报告技术栈表是菜单;v0 锁定一套(Python-first / DuckDB+Parquet / rdflib / LangGraph),可换处都做了接口抽象。
 4. **Evidence 加显式 `status` 字段**:报告只讲「拒答」。v0 区分 NOMINAL/ADVISORY/ABSTAIN,避免把「没事」和「不敢说」混为一谈。
+5. **Gold-label 用事件溯源,不回写 Evidence**:报告要求每个告警最终得到工程师结论。v0 把判定做成 append-only `Adjudication` 事件(join 出「标注后的 Evidence」),保持审计完整性,而非把人工输入塞回不可变的 Evidence。见 ADR-0004。
 
 ## 显式 stub / deferred 清单(v0 不做)
 
@@ -84,6 +86,7 @@ raw → cleaned → feature → model/rule version → ontology entities
 - ClickHouse(DuckDB+Parquet;storage 接口抽象)
 - OEM 工程限值、真热力学 gas-path 模型、FMEA/fault tree、ensemble ML、数字孪生
 - 适航认证证据包、WORM 不可篡改存储、PROV-O 正式绑定
+  (gold-label 判定回路已落地为 append-only JSONL + 事件溯源;真正的 WORM/PROV-O 正式绑定仍 deferred)
 - 跨航司联邦/匿名 benchmark
 
 每项都留了**接口或插入点**,在对应模块 docstring 里标明。

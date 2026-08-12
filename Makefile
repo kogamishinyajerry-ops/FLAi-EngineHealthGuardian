@@ -1,4 +1,4 @@
-.PHONY: install sync lint format type test test-cov demo clean
+.PHONY: install sync lint format type test test-cov demo gold clean
 
 # `uv sync` is the single entrypoint for env + deps (editable install of `ehm`)
 install sync:
@@ -23,6 +23,12 @@ test-cov:
 # End-to-end vertical slice (synthetic data, offline)
 demo:
 	uv run python -m scripts.run_egt_demo
+
+# Gold-label loop demo: run pipeline -> seed verdicts -> feedback report
+gold:
+	uv run python -m scripts.run_egt_demo
+	uv run python -m scripts.adjudicate seed-demo
+	uv run python -m scripts.adjudicate report
 
 clean:
 	rm -rf .mypy_cache .pytest_cache .ruff_cache dist build htmlcov
