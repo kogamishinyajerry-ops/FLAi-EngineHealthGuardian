@@ -2,7 +2,7 @@
 
 中国商飞「发动机健康管理（EHM）智能体」项目的工程实现仓。**当前状态：脚手架 v0（scaffold）** —— 只搭骨架 + 一个端到端可跑的垂直切片,验证「四脑 + Evidence 脊柱」架构,不包含任何真实数据接入或可上线能力。
 
-> 本仓的顶层设计依据是 [`docs/strategy-report.md`](docs/strategy-report.md)(强参考,非圣经)。对其的可执行性评估见 [`docs/exec-assessment.md`](docs/exec-assessment.md)。项目级真实约束源是 [`CODEBUDDY.md`](CODEBUDDY.md)。
+> 本仓的顶层设计依据是一份独立战略研究报告(强参考,非圣经)。该报告出于敏感性**仅本地保留**(docs/strategy-report.md,已 gitignore,不纳入公开仓库)。对其的可执行性评估见 [`docs/exec-assessment.md`](docs/exec-assessment.md)。项目级真实约束源是 [`CODEBUDDY.md`](CODEBUDDY.md)。
 
 ## 这个项目是什么
 

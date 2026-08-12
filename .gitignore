@@ -27,6 +27,9 @@ data/
 # Session / agent tooling metadata
 .zcode/
 
+# Locally-sensitive doc (kept on disk, intentionally NOT published)
+docs/strategy-report.md
+
 # OS / editors
 .DS_Store
 .idea/
