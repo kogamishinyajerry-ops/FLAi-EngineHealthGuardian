@@ -1,4 +1,4 @@
-.PHONY: install sync lint format type test test-cov demo demo-vib gold gold-mro dashboard clean
+.PHONY: install sync lint format type test test-cov demo demo-vib demo-oil gold gold-mro dashboard clean
 
 # `uv sync` is the single entrypoint for env + deps (editable install of `ehm`)
 install sync:
@@ -28,6 +28,10 @@ demo:
 demo-vib:
 	uv run python -m scripts.run_vibration_demo
 
+# Third scenario — oil consumption / leak (rate-based feature shape)
+demo-oil:
+	uv run python -m scripts.run_oil_demo
+
 # Gold-label loop demo: run pipeline -> seed verdicts -> feedback report
 gold:
 	uv run python -m scripts.run_egt_demo
@@ -44,6 +48,7 @@ gold-mro:
 dashboard:
 	uv run python -m scripts.run_egt_demo
 	uv run python -m scripts.run_vibration_demo
+	uv run python -m scripts.run_oil_demo
 	uv run python -m scripts.build_dashboard
 
 clean:

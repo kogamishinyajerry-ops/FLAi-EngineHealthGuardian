@@ -23,6 +23,7 @@ from ehm.safety_brain.audit import AuditLog
 DEFAULT_SCENARIOS: tuple[tuple[str, str, str], ...] = (
     ("EGT 裕度", "egt", "data/audit/egt_demo.jsonl"),
     ("振动", "vibration", "data/audit/vibration_demo.jsonl"),
+    ("滑油", "oil", "data/audit/oil_demo.jsonl"),
 )
 DEFAULT_LABELS = "data/labels/adjudications.jsonl"
 DEFAULT_OUT = "data/dashboard/index.html"

@@ -51,6 +51,11 @@ class EngineSnapshot(BaseModel):
     fuel_flow_kg_h: float | None = Field(default=None, description="Fuel flow, kg/h")
     thrust_ref_pct: float | None = Field(default=None, description="Thrust reference setting, %")
     vibration_ips: float | None = Field(default=None, description="Engine vibration, ips")
+    oil_temp_c: float | None = Field(default=None, description="Oil temperature, °C")
+    oil_pressure_kpa: float | None = Field(default=None, description="Oil pressure, kPa")
+    oil_level_l: float | None = Field(
+        default=None, description="Oil tank level, L (for consumption rate)"
+    )
     config_tag: str = Field(
         default="default",
         description="Configuration id valid at this timestamp (time-aware config)",
