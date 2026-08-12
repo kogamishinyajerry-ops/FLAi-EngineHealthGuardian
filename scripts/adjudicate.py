@@ -4,12 +4,15 @@ Operates on the audit log (Evidence) and the label store (Adjudication events)::
 
     uv run python -m scripts.adjudicate list
     uv run python -m scripts.adjudicate apply <evidence_id> <outcome> [--finding ...] [--by ...]
+    uv run python -m scripts.adjudicate import-mro <mro_jsonl>
     uv run python -m scripts.adjudicate report
     uv run python -m scripts.adjudicate seed-demo
 
-``apply`` is the engineer's verdict. ``report`` is the feedback statistics that
-close the loop back to the PHM/rules layer. ``seed-demo`` writes illustrative
-verdicts on the EGT demo so the loop is observable end-to-end (NOT real labels).
+``apply`` is the engineer's verdict. ``import-mro`` ingests shop findings
+(removal/borescope/NFF/...) as ground-truth adjudications carrying
+``actual_finding``. ``report`` is the feedback statistics that close the loop
+back to the PHM/rules layer. ``seed-demo`` writes illustrative verdicts on the
+EGT demo so the loop is observable end-to-end (NOT real labels).
 """
 
 from __future__ import annotations
@@ -18,7 +21,15 @@ import argparse
 from uuid import UUID
 
 from ehm.core.evidence import Evidence
-from ehm.feedback import Adjudication, AdjudicationOutcome, LabelStore, build_gold_labels, compute
+from ehm.feedback import (
+    Adjudication,
+    AdjudicationOutcome,
+    LabelStore,
+    MroJsonAdapter,
+    build_gold_labels,
+    compute,
+    findings_to_adjudications,
+)
 from ehm.safety_brain.audit import AuditLog
 
 DEFAULT_AUDIT = "data/audit/egt_demo.jsonl"
@@ -71,6 +82,22 @@ def _cmd_report(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_import_mro(args: argparse.Namespace) -> int:
+    """Bridge MRO findings into the loop as ground-truth adjudications."""
+    evidence = _load_evidence(args.audit)
+    findings = list(MroJsonAdapter(args.mro).iter_findings())
+    adjudications = findings_to_adjudications(findings, evidence)
+    store = LabelStore(args.labels)
+    for adjudication in adjudications:
+        store.record(adjudication)
+    orphans = len(findings) - len(adjudications)
+    print(
+        f"Imported {len(adjudications)} adjudications from {len(findings)} findings "
+        f"(orphans skipped: {orphans}) -> {args.labels}"
+    )
+    return 0
+
+
 def _cmd_seed_demo(args: argparse.Namespace) -> int:
     """Write illustrative verdicts on the EGT demo (NOT real labels)."""
     evidence = _load_evidence(args.audit)
@@ -117,6 +144,12 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("seed-demo", help="write illustrative verdicts on the EGT demo").set_defaults(
         func=_cmd_seed_demo
     )
+
+    mro_parser = sub.add_parser(
+        "import-mro", help="ingest MRO findings as ground-truth adjudications (actual_finding)"
+    )
+    mro_parser.add_argument("mro", help="MRO findings JSONL file")
+    mro_parser.set_defaults(func=_cmd_import_mro)
 
     apply_parser = sub.add_parser("apply", help="record an engineer verdict")
     apply_parser.add_argument("evidence_id", type=UUID)

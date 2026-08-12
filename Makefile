@@ -1,4 +1,4 @@
-.PHONY: install sync lint format type test test-cov demo gold clean
+.PHONY: install sync lint format type test test-cov demo gold gold-mro clean
 
 # `uv sync` is the single entrypoint for env + deps (editable install of `ehm`)
 install sync:
@@ -28,6 +28,12 @@ demo:
 gold:
 	uv run python -m scripts.run_egt_demo
 	uv run python -m scripts.adjudicate seed-demo
+	uv run python -m scripts.adjudicate report
+
+# Gold-label loop with real MRO ground truth: pipeline -> import findings -> report
+gold-mro:
+	uv run python -m scripts.run_egt_demo
+	uv run python -m scripts.adjudicate import-mro tests/fixtures/mro_sample.jsonl
 	uv run python -m scripts.adjudicate report
 
 clean:

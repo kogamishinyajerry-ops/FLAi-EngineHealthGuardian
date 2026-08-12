@@ -43,6 +43,8 @@ agent         LangGraph 编排。依赖 core + 各脑的只读结果(Evidence)�
 - **训练/测试按时间、ESN、航司隔离**(禁止同发动机相邻航段随机 split)。本仓尚未进入建模阶段,但任何未来数据集构造必须遵守。
 - 误报治理以 **false-alert budget** 为硬 KPI;稀有故障报 **precision-recall / event-level**,不报 ROC-AUC;RUL 同时报 **interval coverage**,不只 RMSE。
 - **已记录的 Evidence 不可变**。工程师判定(gold-label)只能以 append-only `Adjudication` 事件记录,经 `GoldLabel` join 暴露,绝不回写审计日志里的 Evidence(见 ADR-0004)。这是审计完整性的硬约束。
+- **`Evidence.subject` 必须遵循 `ehm:ESN:<esn>` 约定**:MRO findings 靠它匹配 ESN(见 ADR-0006)。改 subject 格式会静默打断真实标签供给。
+- **时间匹配用事件时间,不用管线运行时间**。`Evidence.timestamp` 是观测发生时刻;`provenance.generated_at` 是产出时刻,二者不可混用。
 
 ## 4. 测试与可复现
 

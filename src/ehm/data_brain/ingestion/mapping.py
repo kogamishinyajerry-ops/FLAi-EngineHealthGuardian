@@ -15,7 +15,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+
+from ehm.core.timeutil import parse_time
 
 
 @dataclass(frozen=True)
@@ -90,22 +91,6 @@ def to_float(value: object | None) -> float | None:
     if text == "":
         return None
     return float(text)
-
-
-def parse_time(raw: object, fmt: str = "iso") -> datetime:
-    """Parse a timestamp; naive values are assumed UTC (QAR convention).
-
-    ``fmt == "iso"`` uses ``datetime.fromisoformat`` (handles a trailing ``Z`` in 3.11+);
-    otherwise ``fmt`` is a ``strptime`` pattern.
-    """
-    text = str(raw).strip()
-    if fmt in ("iso", ""):
-        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
-    else:
-        dt = datetime.strptime(text, fmt)
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=UTC)
-    return dt
 
 
 @dataclass(frozen=True)

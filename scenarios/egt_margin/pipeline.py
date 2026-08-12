@@ -82,6 +82,7 @@ def run(snapshots: list[EngineSnapshot], audit_path: str) -> SliceResult:
 
         ev = Evidence(
             subject=f"ehm:ESN:{esn}",
+            timestamp=latest.timestamp,
             observation=(
                 f"EGT residual trailing slope {rule.score:.2f} °C/flight ({rule.detail}); "
                 f"peer z={peer_z if peer_z is not None else 'n/a'}; peer_size={peers.size(latest)}."

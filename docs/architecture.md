@@ -51,7 +51,7 @@
 | Agent | `agent.graph`(LangGraph) | 2-node 图;LLM 插入点 documented |
 | Canonical Data Model | `core.schemas` | `EngineSnapshot` v0 |
 | Evidence 脊柱 | `core.evidence` | v0,含 NOMINAL/ADVISORY/ABSTAIN 状态 |
-| Gold-label 闭环 | `feedback`(`labels`/`store`/`gold`/`metrics`) | 事件溯源判定 + join + 反馈统计;见 ADR-0004 |
+| Gold-label 闭环 | `feedback`(`labels`/`store`/`gold`/`metrics`/`findings`/`mro_json`) | 事件溯源判定 + join + 反馈统计(ADR-0004);MRO findings 接成 `actual_finding` 真实标签供给(ADR-0006) |
 
 ## 关键数据结构
 

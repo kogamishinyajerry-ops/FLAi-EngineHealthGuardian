@@ -78,6 +78,10 @@ class Evidence(BaseModel):
 
     id: UUID = Field(default_factory=uuid4)
     subject: str = Field(description="Engine URI / ESN the evidence concerns")
+    timestamp: datetime | None = Field(
+        default=None,
+        description="When the observed condition occurred (event time, NOT pipeline-run time)",
+    )
     observation: str = Field(description="What was observed, in plain terms")
     hypothesis: str | None = Field(default=None, description="Candidate cause / failure mode")
     confidence: Confidence = Field(default_factory=Confidence)

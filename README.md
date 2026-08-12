@@ -38,9 +38,12 @@ make type      # mypy (src/ehm)
 ```bash
 uv run python -m scripts.adjudicate list                          # 列出待判定 Evidence
 uv run python -m scripts.adjudicate apply <id> <outcome> [--finding ...]  # 记录判定
+uv run python -m scripts.adjudicate import-mro <mro_jsonl>        # MRO findings 接成 actual_finding 真实标签
 uv run python -m scripts.adjudicate report                         # 反馈统计(coverage / precision / confusion)
 uv run python -m scripts.adjudicate seed-demo                      # 给 demo 写示例判定(非真实标签)
 ```
+
+**真实标签供给**:`import-mro` 把拆换/孔探/NFF 等工单结果(MRO JSONL)转成带 `actual_finding` 的判定事件,经同一套 gold-label 机器产出 shop 确认的 precision/confusion(见 `docs/adr/0006-mro-findings-as-actual-finding.md`)。`make gold-mro` 一键演示。
 
 `outcome` ∈ `true_fault | conditional_anomaly | operational | sensor_issue | nff | inconclusive`。
 

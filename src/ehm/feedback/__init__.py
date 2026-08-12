@@ -13,17 +13,33 @@ and ``metrics.py`` turns that into feedback statistics for the model layer.
 Depends only on ``ehm.core`` — a peer to the brains, not a reverse dependency.
 """
 
+from ehm.feedback.findings import (
+    Disposition,
+    FindingType,
+    MroFinding,
+    derive_outcome,
+    evidence_esn,
+    findings_to_adjudications,
+)
 from ehm.feedback.gold import GoldLabel, build_gold_labels
 from ehm.feedback.labels import Adjudication, AdjudicationOutcome
 from ehm.feedback.metrics import Metrics, compute
+from ehm.feedback.mro_json import MroJsonAdapter
 from ehm.feedback.store import LabelStore
 
 __all__ = [
     "Adjudication",
     "AdjudicationOutcome",
+    "Disposition",
+    "FindingType",
     "GoldLabel",
     "LabelStore",
     "Metrics",
+    "MroFinding",
+    "MroJsonAdapter",
     "build_gold_labels",
     "compute",
+    "derive_outcome",
+    "evidence_esn",
+    "findings_to_adjudications",
 ]
