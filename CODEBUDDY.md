@@ -45,6 +45,7 @@ agent         LangGraph 编排。依赖 core + 各脑的只读结果(Evidence)�
 - **已记录的 Evidence 不可变**。工程师判定(gold-label)只能以 append-only `Adjudication` 事件记录,经 `GoldLabel` join 暴露,绝不回写审计日志里的 Evidence(见 ADR-0004)。这是审计完整性的硬约束。
 - **`Evidence.subject` 必须遵循 `ehm:ESN:<esn>` 约定**:MRO findings 靠它匹配 ESN(见 ADR-0006)。改 subject 格式会静默打断真实标签供给。
 - **时间匹配用事件时间,不用管线运行时间**。`Evidence.timestamp` 是观测发生时刻;`provenance.generated_at` 是产出时刻,二者不可混用。
+- **看板(`dashboard`)永远只读**:它只是 Evidence/指标的视图,**绝不能成为数据源或真相源**。任何「在 UI 里编辑数据」的需求都要回流到库 + 持久化层,而不是看板自己存(见 ADR-0008)。看板不引入新运行时依赖。
 
 ## 4. 测试与可复现
 

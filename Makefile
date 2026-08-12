@@ -1,4 +1,4 @@
-.PHONY: install sync lint format type test test-cov demo demo-vib gold gold-mro clean
+.PHONY: install sync lint format type test test-cov demo demo-vib gold gold-mro dashboard clean
 
 # `uv sync` is the single entrypoint for env + deps (editable install of `ehm`)
 install sync:
@@ -39,6 +39,12 @@ gold-mro:
 	uv run python -m scripts.run_egt_demo
 	uv run python -m scripts.adjudicate import-mro tests/fixtures/mro_sample.jsonl
 	uv run python -m scripts.adjudicate report
+
+# Static dashboard: regenerate demo data, render self-contained HTML, open it
+dashboard:
+	uv run python -m scripts.run_egt_demo
+	uv run python -m scripts.run_vibration_demo
+	uv run python -m scripts.build_dashboard
 
 clean:
 	rm -rf .mypy_cache .pytest_cache .ruff_cache dist build htmlcov

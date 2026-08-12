@@ -24,6 +24,7 @@ Python 3.12 · uv · Pydantic v2 · Polars · DuckDB+Parquet · rdflib(单层本
 make install   # uv sync,创建 venv 并 editable 安装 ehm
 make demo      # 跑 EGT-margin 垂直切片(合成数据,离线)
 make demo-vib  # 跑第二个场景:振动异常趋势(验证「加场景不动库」)
+make dashboard # 生成自包含 HTML 看板并在浏览器打开(三态/置信/溯源/混淆矩阵/precision)
 make gold      # 跑 demo + 种子判定 + 反馈报告(gold-label 闭环演示)
 make test      # pytest
 make lint      # ruff
@@ -58,6 +59,16 @@ uv run python -m scripts.inspect_ingestion acars   # 解码 ACARS fixture
 ```
 
 样例数据见 `tests/fixtures/`(提交进仓,自文档化格式 + 可复现)。真实数据准入落地后,换字典/换样本即可切换,代码不动。
+
+### 可视化看板(静态 HTML)
+
+把整套架构的价值「被看见」:三态机队卡片、四维置信度条、可展开的证据链溯源、混淆矩阵、advisory precision —— 全部在一个自包含离线 HTML 里。
+
+```bash
+make dashboard   # 重生成 demo 数据 → 渲染 data/dashboard/index.html → 浏览器打开
+```
+
+EGT/振动两个场景 tab 切换;EGT 跑过 `import-mro` 后会显示 shop 真相标签和真实 precision。看板是库的**只读消费者**,绝不成为数据源(见 `docs/adr/0008-dashboard-static-consumer.md`)。
 
 ## 目录结构
 

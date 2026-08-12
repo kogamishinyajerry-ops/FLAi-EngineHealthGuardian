@@ -52,6 +52,7 @@
 | Canonical Data Model | `core.schemas` | `EngineSnapshot` v0 |
 | Evidence 脊柱 | `core.evidence` | v0,含 NOMINAL/ADVISORY/ABSTAIN 状态 |
 | Gold-label 闭环 | `feedback`(`labels`/`store`/`gold`/`metrics`/`findings`/`mro_json`) | 事件溯源判定 + join + 反馈统计(ADR-0004);MRO findings 接成 `actual_finding` 真实标签供给(ADR-0006) |
+| 可视化看板 | `dashboard`(`render`/`style`)+ `scripts/build_dashboard.py` | 静态自包含 HTML,**只读消费者**(ADR-0008);`make dashboard` 生成并打开 |
 
 ## 关键数据结构
 

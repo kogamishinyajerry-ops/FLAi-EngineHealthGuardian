@@ -48,6 +48,8 @@ convention = "google"
 "tests/*" = ["D", "S101"]
 "scenarios/*" = ["D"]
 "scripts/*" = ["D"]
+"src/ehm/dashboard/style.py" = ["E501"]  # CSS one-liners are legitimately long
+"src/ehm/dashboard/render.py" = ["E501"]  # HTML markup generation; breaking hurts readability
 
 [tool.mypy]
 python_version = "3.12"
