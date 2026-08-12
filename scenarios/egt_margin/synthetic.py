@@ -16,7 +16,7 @@ import random
 from datetime import UTC, datetime, timedelta
 
 from ehm.core.schemas import EngineSnapshot, FlightPhase
-from ehm.data_brain.features.egt import baseline
+from scenarios.egt_margin.features import baseline
 
 NUM_FLIGHTS = 25
 #: The low-data engine only has this many flights (small solo cohort -> ABSTAIN).

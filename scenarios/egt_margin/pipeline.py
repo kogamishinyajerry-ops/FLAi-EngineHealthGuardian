@@ -18,13 +18,13 @@ from dataclasses import dataclass
 from ehm.agent.graph import run_agent
 from ehm.core.evidence import Evidence, EvidenceStatus, Provenance, Signal
 from ehm.core.schemas import EngineSnapshot
-from ehm.data_brain.features.egt import residual
 from ehm.data_brain.features.peer import PeerGroup
 from ehm.data_brain.ingestion.synthetic import SyntheticAdapter
 from ehm.data_brain.phm.anomaly import residual_trend
 from ehm.data_brain.quality import checks as dq
 from ehm.knowledge_brain.rules import RULES_VERSION, EgtFailureMode
 from ehm.safety_brain import audit, policy, uncertainty
+from scenarios.egt_margin.features import residual
 
 
 @dataclass

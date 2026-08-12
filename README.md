@@ -70,6 +70,10 @@ make dashboard   # 重生成 demo 数据 → 渲染 data/dashboard/index.html �
 
 EGT 跑过 `import-mro` 后,异常卡上会带 `MRO:true_fault` shop 真相标签。看板是库的**只读消费者**,绝不成为数据源(见 `docs/adr/0008`、`docs/adr/0009-dashboard-v2-mission-console.md`)。
 
+### 物理气路模型(EGT baseline)
+
+EGT baseline 不再是拍脑袋线性公式,而是 `ehm.data_brain.physics` 里的**简化涡扇气路 cycle**(进气总温→多变压缩→燃烧室 TIT→涡轮膨胀→EGT)+ `Degradation` 退化态。诚实声明:系数是公开涡扇占位值、**非 LEAP-1C OEM 真值**(A3 未取得);但**监控残差是校准不变的**(常数偏移抵消),所以功能依赖正确即可用。OEM 系数将来直接替换 `EngineDesign` 即可,结构不动。见 `docs/adr/0010-physics-gas-path-model.md`。
+
 ## 目录结构
 
 ```

@@ -41,7 +41,8 @@
 |---|---|---|
 | 数据接入(ACARS/QAR/MRO) | `data_brain.ingestion`(`IngestionAdapter` 协议) | 合成 + **QAR-CSV / ACARS-JSON 真实格式 adapter + ParameterMap**;真实 OEM 字典/ICD、流式 ACARS deferred(见 ADR-0005) |
 | 数据质量 | `data_brain.quality.checks` | 基础 completeness/range;OEM 限值 deferred |
-| 特征/工况归一化 | `data_brain.features.egt` / `peer` | EGT 残差(EGT 场景自带);`PeerGroup` **通用**(`residual_fn` 参数) |
+| 特征/工况归一化 | `data_brain.features.egt` / `peer` | EGT 残差(走 `physics` 气路 baseline);`PeerGroup` **通用**(`residual_fn` 参数) |
+| 物理模型/数字孪生 | `data_brain.physics` | 简化涡扇**气路 cycle**(EGT baseline)+ `Degradation`;系数占位非 OEM,残差校准不变(ADR-0010) |
 | 异常检测/PHM | `data_brain.phm.anomaly` | `residual_trend` **通用**趋势规则(参数无关);ensemble/ML/数字孪生 deferred |
 | 发动机本体 | `knowledge_brain.ontology`(rdflib 单层) | 命名空间 + 核心类/关系 v0 |
 | 规则/因果 | `knowledge_brain.rules` | 失效模式词汇 + version;FMEA/fault tree deferred |

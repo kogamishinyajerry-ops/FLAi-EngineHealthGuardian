@@ -1,6 +1,10 @@
-"""Feature engineering — phase-aware, physics/peer normalization."""
+"""Feature engineering — generic, phase-aware normalization primitives.
 
-from ehm.data_brain.features.egt import baseline, residual
+Scenario-specific feature engineering (e.g. EGT / vibration residuals) lives in
+each ``scenarios/<name>/features.py``; the library only provides the reusable
+``PeerGroup`` (see ADR-0007).
+"""
+
 from ehm.data_brain.features.peer import PeerGroup
 
-__all__ = ["PeerGroup", "baseline", "residual"]
+__all__ = ["PeerGroup"]
