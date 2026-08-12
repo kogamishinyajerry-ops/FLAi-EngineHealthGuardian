@@ -5,6 +5,7 @@ from scenarios.egt_margin.features import baseline, residual
 from ehm.core.schemas import EngineSnapshot, FlightPhase
 from ehm.data_brain.physics import (
     Degradation,
+    EngineDesign,
     OperatingPoint,
     default_design,
     egt_degraded,
@@ -36,7 +37,26 @@ def test_turbine_cools_the_gas():
 
 def test_compressor_pressure_rises_with_opr():
     gp = gas_path(_DESIGN, _op())
-    assert gp.p3 > gp.p2
+    assert gp.p3 > 101325.0  # compressed well above sea-level ambient
+
+
+def test_compression_train_progressive():
+    """Two-spool train: fan -> LPC -> HPC heats progressively."""
+    gp = gas_path(_DESIGN, _op())
+    assert gp.t2 < gp.t13 < gp.t25 < gp.t3
+
+
+def test_cooling_air_lowers_egt():
+    """More turbine cooling-air bleed -> lower measured EGT (cooling mixes in)."""
+    more_cooling = EngineDesign(cooling_bleed=0.25)
+    assert egt_healthy(more_cooling, _op()) < egt_healthy(_DESIGN, _op())
+
+
+def test_higher_bpr_lowers_egt():
+    """Higher BPR -> more fan work extracted by the LPT -> lower core EGT."""
+    high_bpr = EngineDesign(bpr=12.0)
+    low_bpr = EngineDesign(bpr=5.0)
+    assert egt_healthy(high_bpr, _op()) < egt_healthy(low_bpr, _op())
 
 
 # --- directional dependence (the monitoring-relevant functional form) ---
