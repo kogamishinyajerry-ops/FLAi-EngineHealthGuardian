@@ -85,17 +85,19 @@ drift/stuck/bias(label=`sensor_fault`,与发动机故障分开)。
 > MRO finding 的真相 = 注入退化是否曾激活:曾激活→`removal/repair`(→TRUE_FAULT);否则
 > →`borescope/rtv`(→NFF,含传感器漂移/混淆项/健康——shop visit 找不到发动机故障,即 NFF)。
 
-## 8. 方法验证(NASA C-MAPSS)—— P4(未实现)
+## 8. 方法验证(NASA C-MAPSS)—— P4 已实现
 
-复现 C-MAPSS 退化设置(HPC 效率衰减 + 传感器漂移),断言定性形状一致;**验证方法对,不宣称
-等于 LEAP-1C**。C-MAPSS 也可作公开真实格式数据集喂 adapter(仅方法/管道验证)。
+不 ingested 真实 C-MAPSS(格式不同、domain gap 大),而是在工厂里**复现 C-MAPSS FD001 的退化
+模型**(HPC 效率衰减、按发动机不同 onset、近线性增长 + 工况噪声),断言方法再现其**定性签名**:
+退化机 EGT 残差有明显上行斜率且与健康机**干净分离**(min 退化斜率 > max 健康斜率),轨迹末端
+高于始端。**验证方法对,不宣称等于 LEAP-1C**。回归测试:`tests/test_synth_cmapss.py`。
 
 ## 9. 可复现 + 资产化
 
 声明式 `SynthConfig`(frozen dataclass)+ 分层 seed(per-engine 子 seed)+ `(config_hash,
 factory_version, seed)` 写入每批 README。`make synth` 重放。配置驱动,加故障类 = 加配置项。
 
-## 10. 当前实现(P2 + P3)结构
+## 10. 当前实现(P2 + P3 + P4)结构
 
 ```
 src/ehm/data_brain/
@@ -126,8 +128,8 @@ src/ehm/data_brain/
 - ✅ **P1** 全相位剖面 → QAR-CSV → `QarCsvAdapter`/`PhaseTracker` 回环
 - ✅ **P2** 多 ESN fleet + peer + 混淆项 + manifest + seed/版本
 - ✅ **P3** ACARS-JSONL + MRO-JSONL;合成 MRO finding 经 `findings_to_adjudications` 接入 gold-label 回路
-- ⏳ **P4** C-MAPSS 方法验证回归测试
-- ⏳ **P5** 按 ESN/时间拆分的训练/评估数据集产物
+- ✅ **P4** C-MAPSS 风格方法验证回归测试(退化定性形状)
+- ⏳ **P5** 按 ESN/时间拆分的训练/评估数据集产物(分集 manifest + 拆分脚本)
 
 ## 13. 风险
 

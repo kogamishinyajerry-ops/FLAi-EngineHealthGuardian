@@ -46,11 +46,15 @@
   算术逆);ACARS-JSONL 经 `AcarsJsonAdapter` 回环;MRO-JSONL 经 `MroJsonAdapter` 回环且携带
   注入真相(退化机→removal、其余→borescope);manifest 真相标签正确;`(seed,config)` 复跑
   字节一致;snapshots.jsonl 可还原 `EngineSnapshot`。
-- `tests/test_synth_gold_label.py`:工厂快照 → EGT pipeline → Evidence → 合成 MRO finding
+- `tests/test_synth_gold_label.py`(P3):工厂快照 → EGT pipeline → Evidence → 合成 MRO finding
   → `findings_to_adjudications` → 断言注入真相(退化机=TRUE_FAULT,传感器漂移/混淆项/健康=NFF)。
+- `tests/test_synth_cmapss.py`(P4):复现 C-MAPSS FD001 退化模型,断言退化机 EGT 残差上行斜率与
+  健康机干净分离、轨迹末端高于始端——方法定性签名,不宣称等于 LEAP。
 
 ## 后果
 - 好:合成数据从「线性占位」升级为「物理驱动、可注入、可溯源、产三种真实格式 + 接入 gold-label
-  回路」的资产;`make synth` 一键重放;端到端压测真实数据接入(A1)落地后的路径。
-- 代价:仍是占位校准(非 LEAP);MRO finding 是每引擎一条(shop-visit 粒度),非逐航段。
-- 仍是占位/deferred:C-MAPSS 方法验证(P4)、按 ESN/时间拆分的训练/评估数据集产物(P5)。
+  回路」的资产;`make synth` 一键重放;端到端压测真实数据接入(A1)落地后的路径;C-MAPSS 方法
+  验证守护「方法没退化」。
+- 代价:仍是占位校准(非 LEAP);MRO finding 是每引擎一条(shop visit 粒度),非逐航段。
+- 仍是占位/deferred:按 ESN/时间拆分的训练/评估数据集产物(P5);真实 C-MAPSS 数据 ingest
+  (格式适配器)与 OEM 校准。

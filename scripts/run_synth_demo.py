@@ -29,7 +29,7 @@ def main() -> None:
 
     width = 72
     print("=" * width)
-    print("Synthetic-data factory — physics-driven fleet (P2-P3)")
+    print("Synthetic-data factory — physics-driven fleet (P2-P4)")
     print("=" * width)
     print(f"dataset_id   : {config.dataset_id}")
     print(f"factory      : {config.factory_version}")
