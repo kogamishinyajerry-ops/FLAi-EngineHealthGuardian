@@ -23,16 +23,34 @@ from ehm.data_brain.physics.cycle import (
     operating_point_from,
     phase_environment,
 )
+from ehm.data_brain.physics.oil import (
+    OilState,
+    consumption_rate_l_per_h,
+    oil_pressure,
+    oil_temperature,
+)
+from ehm.data_brain.physics.vibration import (
+    VibrationState,
+    vibration_at,
+    vibration_healthy,
+)
 
 __all__ = [
     "Degradation",
     "EngineDesign",
     "GasPathPoint",
+    "OilState",
     "OperatingPoint",
+    "VibrationState",
+    "consumption_rate_l_per_h",
     "default_design",
     "egt_degraded",
     "egt_healthy",
     "gas_path",
+    "oil_pressure",
+    "oil_temperature",
     "operating_point_from",
     "phase_environment",
+    "vibration_at",
+    "vibration_healthy",
 ]
