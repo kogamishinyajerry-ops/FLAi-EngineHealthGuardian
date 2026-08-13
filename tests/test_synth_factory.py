@@ -186,3 +186,33 @@ def test_snapshots_jsonl_parses_into_canonical_model(tmp_path):
     cruise = next(s for s in snaps if s.esn == "E_H1")
     assert cruise.phase is FlightPhase.CRUISE
     assert cruise.oil_level_l is not None  # oil mass-balance carried through
+
+
+def test_acars_jsonl_round_trips_through_adapter(tmp_path):
+    from ehm.data_brain.ingestion import EXAMPLE_ACARS_MAP, AcarsJsonAdapter
+
+    out = run_factory(_tiny_config(tmp_path))
+    adapter = AcarsJsonAdapter(out / "acars_json" / "reports.jsonl", EXAMPLE_ACARS_MAP)
+    snaps = list(adapter.iter_snapshots())
+    assert len(snaps) == 5 * 3  # one cruise report per flight
+    cruise = next(s for s in snaps if s.esn == "E_H1")
+    assert cruise.phase is FlightPhase.CRUISE
+    # ACARS carries canonical units on disk (degC / kg_h) -> no conversion needed
+    assert cruise.egt_c is not None and 250.0 < cruise.egt_c < 950.0
+    assert cruise.fuel_flow_kg_h is not None and cruise.fuel_flow_kg_h > 0.0
+
+
+def test_mro_jsonl_round_trips_and_carries_injected_truth(tmp_path):
+    from ehm.feedback.findings import FindingType
+    from ehm.feedback.mro_json import MroJsonAdapter
+
+    out = run_factory(_tiny_config(tmp_path))
+    findings = list(MroJsonAdapter(out / "mro_json" / "findings.jsonl").iter_findings())
+    assert len(findings) == 5  # one shop-visit finding per engine
+    by_esn = {f.esn: f for f in findings}
+    # only the engine with injected HPC degradation becomes a real-fault removal
+    assert by_esn["E_DECAY"].finding_type is FindingType.REMOVAL
+    assert by_esn["E_DECAY"].component == "HPC"
+    # sensor-fault / confounder / healthy engines all yield no engine fault (NFF)
+    for healthy in ("E_H1", "E_H2", "E_DRIFT", "E_HOT"):
+        assert by_esn[healthy].finding_type is FindingType.BORESCOPE

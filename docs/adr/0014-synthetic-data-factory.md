@@ -43,12 +43,14 @@
 - `tests/test_synth_physics.py`:振动↗转速/不平衡、滑油温↗EGT、油压↗N2、泄漏↗消耗、退化↗EGT、
   全相位 EGT 落 DQ 区间。
 - `tests/test_synth_factory.py`:产物齐全;QAR-CSV 经 `QarCsvAdapter` 回环(六相位全现 + 单位
-  算术逆);manifest 真相标签正确(healthy=no_fault、HPC=true_fault、drift=sensor_fault、
-  hot-day=no_fault);`(seed,config)` 复跑字节一致;snapshots.jsonl 可还原 `EngineSnapshot`。
+  算术逆);ACARS-JSONL 经 `AcarsJsonAdapter` 回环;MRO-JSONL 经 `MroJsonAdapter` 回环且携带
+  注入真相(退化机→removal、其余→borescope);manifest 真相标签正确;`(seed,config)` 复跑
+  字节一致;snapshots.jsonl 可还原 `EngineSnapshot`。
+- `tests/test_synth_gold_label.py`:工厂快照 → EGT pipeline → Evidence → 合成 MRO finding
+  → `findings_to_adjudications` → 断言注入真相(退化机=TRUE_FAULT,传感器漂移/混淆项/健康=NFF)。
 
 ## 后果
-- 好:合成数据从「线性占位」升级为「物理驱动、可注入、可溯源、产真实格式」的资产;`make synth`
-  一键重放;端到端压测真实数据接入(A1)落地后的路径。
-- 代价:仍是占位校准(非 LEAP);范围到 P2(QAR-CSV + snapshots + manifest)。
-- 仍是占位/deferred:ACARS-JSONL / MRO-JSONL(P3,接 gold-label 回路)、C-MAPSS 方法验证(P4)、
-  按 ESN/时间拆分的训练/评估数据集产物(P5)。
+- 好:合成数据从「线性占位」升级为「物理驱动、可注入、可溯源、产三种真实格式 + 接入 gold-label
+  回路」的资产;`make synth` 一键重放;端到端压测真实数据接入(A1)落地后的路径。
+- 代价:仍是占位校准(非 LEAP);MRO finding 是每引擎一条(shop-visit 粒度),非逐航段。
+- 仍是占位/deferred:C-MAPSS 方法验证(P4)、按 ESN/时间拆分的训练/评估数据集产物(P5)。

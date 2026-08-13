@@ -77,10 +77,13 @@ drift/stuck/bias(label=`sensor_fault`,与发动机故障分开)。
 |---|---|---|
 | QAR-CSV | 一航段一文件,全相位时间序列 | `QarCsvAdapter` + `PhaseTracker` |
 | snapshots.jsonl | 一航段一巡航 canonical 快照(含滑油) | `SyntheticAdapter` |
-| manifest.jsonl | ground-truth | (标签侧) |
+| acars_json/reports.jsonl | 一航段一巡航 ACARS 报告( canonical 单位) | `AcarsJsonAdapter` |
+| mro_json/findings.jsonl | 一 ESN 一 shop-visit finding(注入真相) | `MroJsonAdapter` → `findings_to_adjudications` |
+| manifest.jsonl | per-flight ground-truth | (标签侧) |
 
-> ACARS-JSONL / MRO-JSONL 在 **P3**;当前 P2 产 QAR-CSV + snapshots + manifest。
-> 单位逆向:`°C→°F`、`kg/h→lb/h`,QarCsvAdapter 转回验证算术逆。
+> 单位逆向:QAR 存 `°F`/`lb/h`,QarCsvAdapter 转回验证算术逆;ACARS 存 canonical 单位。
+> MRO finding 的真相 = 注入退化是否曾激活:曾激活→`removal/repair`(→TRUE_FAULT);否则
+> →`borescope/rtv`(→NFF,含传感器漂移/混淆项/健康——shop visit 找不到发动机故障,即 NFF)。
 
 ## 8. 方法验证(NASA C-MAPSS)—— P4(未实现)
 
@@ -92,7 +95,7 @@ drift/stuck/bias(label=`sensor_fault`,与发动机故障分开)。
 声明式 `SynthConfig`(frozen dataclass)+ 分层 seed(per-engine 子 seed)+ `(config_hash,
 factory_version, seed)` 写入每批 README。`make synth` 重放。配置驱动,加故障类 = 加配置项。
 
-## 10. 当前实现(P2)结构
+## 10. 当前实现(P2 + P3)结构
 
 ```
 src/ehm/data_brain/
@@ -104,7 +107,8 @@ src/ehm/data_brain/
     sensor.py     # AR(1) 噪声 + 丢点 + 传感器故障
     confounders.py# hot_day/cold_day/high_alt(改环境不改健康)
     manifest.py   # FlightTruth + truth_label
-    factory.py    # 编排 → QAR-CSV + snapshots + manifest + config/hash/README
+    mro.py        # 注入退化 -> MRO finding 诚实映射(EngineRunSummary)
+    factory.py    # 编排 → QAR-CSV + snapshots + ACARS + MRO + manifest + config/hash/README
 ```
 
 默认 fleet(6 台):2 healthy peer / 1 HPC decay(`true_fault`)/ 1 EGT drift(`sensor_fault`)
@@ -121,7 +125,7 @@ src/ehm/data_brain/
 - ✅ **P0** 退化接通物理旋钮 + 振动/滑油子模型
 - ✅ **P1** 全相位剖面 → QAR-CSV → `QarCsvAdapter`/`PhaseTracker` 回环
 - ✅ **P2** 多 ESN fleet + peer + 混淆项 + manifest + seed/版本
-- ⏳ **P3** 传感器故障已就位(stub);扩 ACARS-JSONL + MRO-JSONL,接 gold-label 回路
+- ✅ **P3** ACARS-JSONL + MRO-JSONL;合成 MRO finding 经 `findings_to_adjudications` 接入 gold-label 回路
 - ⏳ **P4** C-MAPSS 方法验证回归测试
 - ⏳ **P5** 按 ESN/时间拆分的训练/评估数据集产物
 

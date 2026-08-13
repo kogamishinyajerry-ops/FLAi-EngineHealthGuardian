@@ -52,6 +52,7 @@ from ehm.data_brain.synth.engine import (
 )
 from ehm.data_brain.synth.manifest import FlightTruth, classify, write_manifest
 from ehm.data_brain.synth.mission import build_profile, sample_surface_oat
+from ehm.data_brain.synth.mro import EngineRunSummary, finding_dict
 from ehm.data_brain.synth.sensor import SampleReading, SensorLayer
 
 _FACTORY_VERSION = "0.1.0"
@@ -72,8 +73,6 @@ _QAR_COLUMNS: tuple[tuple[str, str], ...] = (
     ("VIB", "vibration_ips"),
     ("THR", "thrust_pct"),
 )
-
-
 def _deg_c_to_f(c: float) -> float:
     return c * 9.0 / 5.0 + 32.0
 
@@ -168,16 +167,20 @@ def _emit_qar_csv(path: Path, flight_ts: datetime, readings: list[SampleReading]
             writer.writerow(values)
 
 
-def _cruise_snapshot(
-    esn: str, config: str, flight_id: str, flight_ts: datetime,
-    readings: list[SampleReading], oil_level_l: float,
-) -> EngineSnapshot | None:
-    """Pick the median cruise sample and freeze it as a canonical cruise snapshot."""
+def _median_cruise_reading(readings: list[SampleReading]) -> SampleReading | None:
+    """Pick the median cruise sample (one flight's representative cruise reading)."""
     cruise_idx = [i for i, r in enumerate(readings) if r.phase is FlightPhase.CRUISE]
     if not cruise_idx:
         return None
-    mid = cruise_idx[len(cruise_idx) // 2]
-    r = readings[mid]
+    return readings[cruise_idx[len(cruise_idx) // 2]]
+
+
+def _cruise_snapshot(
+    esn: str, config: str, flight_id: str, flight_ts: datetime,
+    reading: SampleReading, oil_level_l: float,
+) -> EngineSnapshot:
+    """Freeze one cruise reading as a canonical ``EngineSnapshot``."""
+    r = reading
     fields: dict[str, object] = {
         "esn": esn,
         "flight_id": flight_id,
@@ -198,6 +201,23 @@ def _cruise_snapshot(
     return EngineSnapshot.model_validate(fields)
 
 
+def _acars_record(
+    esn: str, flight_id: str, flight_ts: datetime, reading: SampleReading
+) -> dict[str, object]:
+    """One ACARS cruise report (canonical units on disk, matching EXAMPLE_ACARS_MAP)."""
+    return {
+        "ts": _iso(flight_ts, reading.t_offset_s),
+        "esn": esn,
+        "flight": flight_id,
+        "phase": "cruise",
+        "OAT": reading.oat_c,
+        "N1": reading.n1_pct,
+        "N2": reading.n2_pct,
+        "EGT": reading.egt_c,
+        "FF": reading.fuel_flow_kg_h,
+    }
+
+
 def _phase_counts(readings: list[SampleReading]) -> dict[str, int]:
     return {phase: n for phase, n in sorted(Counter(r.phase.value for r in readings).items())}
 
@@ -210,11 +230,17 @@ def run_factory(config: SynthConfig) -> Path:
     master_rng = random.Random(config.seed)
     manifest: list[FlightTruth] = []
     snapshots: list[EngineSnapshot] = []
+    acars: list[dict[str, object]] = []
+    summaries: list[EngineRunSummary] = []
 
     for engine in config.fleet:
         eng_rng = random.Random(master_rng.randrange(2**32))
         resolved = resolve_for_esn(engine.esn, config.confounders)
         oil_level = _TANK_START_L
+        ever_active = False
+        max_mag = 0.0
+        last_ts = _flight_ts(0)
+        last_cycle = 0
         for cycle in range(engine.n_flights):
             state = evolve(engine.degradation, cycle)
             mag = magnitude(engine.degradation, cycle)
@@ -230,18 +256,34 @@ def run_factory(config: SynthConfig) -> Path:
             fts = _flight_ts(cycle)
             _emit_qar_csv(qar_dir / f"{engine.esn}_{fid}.csv", fts, readings)
 
-            snap = _cruise_snapshot(
-                engine.esn, engine.config, fid, fts, readings, oil_level
-            )
-            if snap is not None:
-                snapshots.append(snap)
+            cruise = _median_cruise_reading(readings)
+            if cruise is not None:
+                snapshots.append(
+                    _cruise_snapshot(engine.esn, engine.config, fid, fts, cruise, oil_level)
+                )
+                acars.append(_acars_record(engine.esn, fid, fts, cruise))
 
             truth = classify(state.active, sensor.active_faults())
             manifest.append(
                 _make_truth(engine, fid, cycle, fts, readings, mag, state, sensor, resolved, truth)
             )
+            ever_active = ever_active or state.active
+            max_mag = max(max_mag, mag)
+            last_ts, last_cycle = fts, cycle
 
-    _write_artifacts(out, config, manifest, snapshots)
+        summaries.append(
+            EngineRunSummary(
+                esn=engine.esn,
+                config=engine.config,
+                degradation_kind=engine.degradation.kind,
+                ever_active=ever_active,
+                max_magnitude=max_mag,
+                last_flight_ts=last_ts,
+                last_cycle=last_cycle,
+            )
+        )
+
+    _write_artifacts(out, config, manifest, snapshots, acars, summaries)
     return out
 
 
@@ -273,12 +315,26 @@ def _write_snapshots(snapshots: list[EngineSnapshot], out: Path) -> None:
             handle.write(snap.model_dump_json() + "\n")
 
 
+def _write_jsonl(records: list[dict[str, object]], path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as handle:
+        for rec in records:
+            handle.write(json.dumps(rec, sort_keys=True, default=str) + "\n")
+
+
 def _write_artifacts(
-    out: Path, config: SynthConfig, manifest: list[FlightTruth], snapshots: list[EngineSnapshot]
+    out: Path,
+    config: SynthConfig,
+    manifest: list[FlightTruth],
+    snapshots: list[EngineSnapshot],
+    acars: list[dict[str, object]],
+    summaries: list[EngineRunSummary],
 ) -> None:
     out.mkdir(parents=True, exist_ok=True)
     write_manifest(manifest, out / "manifest.jsonl")
     _write_snapshots(snapshots, out)
+    _write_jsonl(acars, out / "acars_json" / "reports.jsonl")
+    _write_jsonl([finding_dict(s) for s in summaries], out / "mro_json" / "findings.jsonl")
     (out / "config.json").write_text(
         json.dumps(config.to_jsonable(), indent=2, sort_keys=True, default=str) + "\n",
         encoding="utf-8",
@@ -299,6 +355,9 @@ def _write_readme(out: Path, config: SynthConfig, manifest: list[FlightTruth]) -
         "                  OEM truth. Coefficients are generic placeholders; the residual",
         "                  used for monitoring is calibration-invariant (ADR-0010/0013).",
         "labels          : manifest.jsonl only (what was injected). Never mix with real labels.",
+        "formats         : qar_csv/ (per-flight), snapshots.jsonl (cruise canonical),",
+        "                  acars_json/reports.jsonl (cruise reports), mro_json/findings.jsonl",
+        "                  (shop-visit truth, feeds the gold-label loop). All source=synthetic.",
         "",
         "truth breakdown : "
         + ", ".join(f"{k}={v}" for k, v in sorted(counts.items())),

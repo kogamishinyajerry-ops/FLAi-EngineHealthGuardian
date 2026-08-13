@@ -29,7 +29,7 @@ def main() -> None:
 
     width = 72
     print("=" * width)
-    print("Synthetic-data factory — physics-driven fleet (P2)")
+    print("Synthetic-data factory — physics-driven fleet (P2-P3)")
     print("=" * width)
     print(f"dataset_id   : {config.dataset_id}")
     print(f"factory      : {config.factory_version}")
@@ -50,8 +50,10 @@ def main() -> None:
         "README.txt",
     ):
         path = out / name
-        print(f"  - {name:<18} {'(missing)' if not path.exists() else path}")
-    print(f"  - qar_csv/            {len(qar_files)} flight CSVs")
+        print(f"  - {name:<22} {'(missing)' if not path.exists() else path}")
+    print(f"  - qar_csv/                 {len(qar_files)} flight CSVs")
+    print(f"  - acars_json/reports.jsonl {len(manifest)} cruise reports")
+    print(f"  - mro_json/findings.jsonl  {len(esns)} shop-visit findings (-> gold-label loop)")
     print("-" * width)
     print("Round-trip: QAR-CSV -> QarCsvAdapter -> PhaseTracker -> EngineSnapshots")
     print("(synthetic data walks the same path real data will). See README.txt for honesty notes.")
